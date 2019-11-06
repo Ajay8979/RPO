@@ -1,0 +1,13 @@
+db.username=root
+db.password=l@v@ny@putta123
+db.driver=com.mysql.jdbc.Driver
+db.url=jdbc:mysql://localhost:3306/testing
+##Application secret used for salting 
+app.secret=ThisIsASecretSoChangeMe
+ 
+ 
+fileUploadPath=/opt/tomcat/webapps/Documents/
+
+resumeUploadPath=/opt/tomcat/webapps/Resumes/
+
+offerletterUploadPath=/opt/tomcat/webapps/webapps/rpo_offer/

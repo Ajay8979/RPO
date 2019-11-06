@@ -1,0 +1,97 @@
+package com.ojas.rpo.security.dao.addClientContact;
+
+import java.util.List;
+
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ojas.rpo.security.dao.JpaDao;
+import com.ojas.rpo.security.entity.AddContact;
+
+public class JpaAddContactDao extends JpaDao<AddContact, Long> implements AddContactDao {
+
+	public JpaAddContactDao() {
+		super(AddContact.class);
+		// TODO Auto-generated constructor stub
+	}
+
+	@Override
+	@Transactional
+	public AddContact save(AddContact entity) {
+		// TODO Auto-generated method stub
+		return this.getEntityManager().merge(entity);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<AddContact> findContactByClientId(Long id) {
+		CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+		CriteriaQuery<AddContact> cq = cb.createQuery(AddContact.class);
+		Root<AddContact> e = cq.from(AddContact.class);
+		Join<AddContact, AddContact> r = e.join("client", JoinType.LEFT);
+		Predicate p = cb.equal(r.get("id"), id);
+		cq.where(p);
+		TypedQuery<AddContact> tq = getEntityManager().createQuery(cq);
+		return tq.getResultList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<AddContact> findActiveContactByClientId(Long id) {
+		CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+		CriteriaQuery<AddContact> cq = cb.createQuery(AddContact.class);
+		Root<AddContact> e = cq.from(AddContact.class);
+		Join<AddContact, AddContact> r = e.join("client", JoinType.LEFT);
+		Predicate p = cb.and(cb.equal(r.get("id"), id), cb.equal(e.get("status"), "Active"));
+		cq.where(p);
+		TypedQuery<AddContact> tq = getEntityManager().createQuery(cq);
+		return tq.getResultList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<AddContact> findContactByBdmId(Long id, String role) {
+
+		Query query = null;
+		List<AddContact> requirementsList = null;
+
+		if (role.equalsIgnoreCase("BDM")) {
+			query = getEntityManager().createQuery(
+					"from AddContact req where req.client.primaryContact.id=? or req.client.secondaryContact.id=? order by id desc");
+			query.setParameter(1, id);
+			query.setParameter(2, id);
+			requirementsList = query.getResultList();
+		} else {
+			query = getEntityManager().createQuery("from AddContact req  order by id desc");
+			requirementsList = query.getResultList();
+		}
+
+		return requirementsList;
+
+	}
+
+	@Override
+	@Transactional
+	public int updatingStatus(Long id, String status) {
+		int i = 0;
+		if (status != null) {
+			Query q = getEntityManager().createNativeQuery("update addcontact set status=?  where id =?");
+			q.setParameter(1, status);
+			q.setParameter(2, id);
+			i = q.executeUpdate();
+
+		}
+
+		return i;
+
+	}
+
+}

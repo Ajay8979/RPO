@@ -1,0 +1,351 @@
+package com.ojas.rpo.security.dao.user;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import org.hibernate.usertype.UserType;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.itextpdf.text.log.SysoCounter;
+import com.ojas.rpo.security.dao.JpaDao;
+import com.ojas.rpo.security.entity.AddContact;
+import com.ojas.rpo.security.entity.Candidate;
+import com.ojas.rpo.security.entity.ExceptionMessage;
+import com.ojas.rpo.security.entity.RequestBody;
+import com.ojas.rpo.security.entity.Response;
+import com.ojas.rpo.security.entity.User;
+import com.ojas.rpo.security.transfer.UserTransfer;
+
+public class JpaUserDao extends JpaDao<User, Long> implements UserDao {
+	public JpaUserDao() {
+		super(User.class);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public User loadUserByUsername(String username) throws UsernameNotFoundException {
+		final CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+		Predicate p;
+		Predicate p1;
+		Predicate p2;
+		final CriteriaQuery<User> criteriaQuery = builder.createQuery(this.entityClass);
+
+		Root<User> root = criteriaQuery.from(this.entityClass);
+		Path<String> namePath = root.get("name");
+		Path<String> statuspath = root.get("status");
+		p = builder.equal(namePath, username);
+		p1 = builder.equal(statuspath, "Active");
+		p2 = builder.and(p, p1);
+		criteriaQuery.where(p2);
+		TypedQuery<User> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+		List<User> users = typedQuery.getResultList();
+
+		if (users.isEmpty()) {
+			throw new UsernameNotFoundException("The user with name " + username + " was not found");
+		}
+
+		return users.get(0);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public User findByName(String name) {
+		final CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+		final CriteriaQuery<User> criteriaQuery = builder.createQuery(this.entityClass);
+
+		Root<User> root = criteriaQuery.from(this.entityClass);
+		Path<String> namePath = root.get("name");
+		criteriaQuery.where(builder.equal(namePath, name));
+
+		TypedQuery<User> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+		List<User> users = typedQuery.getResultList();
+
+		if (users.isEmpty()) {
+			return null;
+		}
+
+		return users.iterator().next();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<User> findByRole(String role) {
+		final CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+		final CriteriaQuery<User> criteriaQuery = builder.createQuery(this.entityClass);
+
+		Root<User> root = criteriaQuery.from(this.entityClass);
+		Path<String> namePath = root.get("role");
+		criteriaQuery.where(builder.equal(namePath, role));
+
+		TypedQuery<User> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+		List<User> users = typedQuery.getResultList();
+		return users;
+	}
+
+	@Transactional(readOnly = true)
+	public List<User> findByReportingId(Long id) {
+		Query query = null;
+		List<User> requirementsList = null;
+		query = getEntityManager().createQuery("from User req where req.reportingId.id = " + id + "order by id desc");
+
+		requirementsList = query.getResultList();
+		return requirementsList;
+
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<User> findByOnlyBdmleadRole() {
+		Query query = null;
+		List<User> requirementsList = null;
+		query = getEntityManager().createQuery("from User req where req.role in('BDM') order by id desc");
+
+		requirementsList = query.getResultList();
+		return requirementsList;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<User> findByOnlyAMRole() {
+		Query query = null;
+		List<User> requirementsList = null;
+		query = getEntityManager().createQuery("from User req where req.role in('AM') order by id desc");
+
+		requirementsList = query.getResultList();
+		return requirementsList;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ojas.rpo.security.dao.JpaDao#findAll()
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<User> findAll() {
+		final CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+		final CriteriaQuery<User> criteriaQuery = builder.createQuery(User.class);
+
+		Root<User> root = criteriaQuery.from(User.class);
+		criteriaQuery.orderBy(builder.desc(root.get("id")));
+
+		TypedQuery<User> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+		System.out.println(typedQuery.getResultList().toString());
+		return typedQuery.getResultList();
+	}
+
+	@Override
+	public List<User> findByRoleAndId(Long id, String role) {
+		Query q = null;
+		if (role.equalsIgnoreCase("BDM")) {
+			q = getEntityManager()
+					.createQuery("from User user where user.reportingId.id=" + id + " and role='" + role + "'");
+		} else {
+			q = getEntityManager().createQuery("from User user where role='" + role + "'");
+		}
+		List<User> results = q.getResultList();
+
+		return results;
+	}
+
+	@Transactional
+	public Response updateUserById(Long id, User userUpdate) {
+		try {
+			User user = find(id);
+			// String reportingQuery="select name from user where reportingId=
+			// "+user.getReportingId();
+			String sql = "UPDATE `user` SET ";
+
+			StringBuilder sqlBuilder = new StringBuilder(sql);
+			if (null != user) {
+				if (userUpdate.getFirstName() != null) {
+					sqlBuilder.append(" firstName ='" + userUpdate.getFirstName() + "',");
+				}
+				if (userUpdate.getLastName() != null) {
+					sqlBuilder.append(" lastname='" + userUpdate.getLastName() + "',");
+				}
+				if (userUpdate.getEmail() != null) {
+					sqlBuilder.append(" email='" + userUpdate.getEmail() + "',");
+				}
+				if (userUpdate.getContactNumber() != null) {
+					sqlBuilder.append(" contactNumber=" + userUpdate.getContactNumber() + ",");
+				}
+				if (userUpdate.getExtension() != null) {
+					sqlBuilder.append(" extension=" + userUpdate.getExtension() + ",");
+				}
+				if (userUpdate.getRole() != null) {
+					sqlBuilder.append(" role='" + userUpdate.getRole() + "',");
+				}
+				if (userUpdate.getDoj() != null) {
+
+					sqlBuilder.append(" doj='" + new java.sql.Date(userUpdate.getDoj().getTime()) + "',");
+				}
+				if (userUpdate.getStatus() != null) {
+					sqlBuilder.append(" status='" + userUpdate.getStatus() + "',");
+				}
+				if (userUpdate.getReportingId() != null) {
+					sqlBuilder.append(" reporting_id=" + userUpdate.getReportingId().getId() + ",");
+				}
+				if (userUpdate.getSalary() != null) {
+					sqlBuilder.append(" salary=" + userUpdate.getSalary() + ",");
+				}
+				if (userUpdate.getVariablepay() != null) {
+					sqlBuilder.append(" variablepay=" + userUpdate.getVariablepay() + ",");
+				}
+				if (userUpdate.getCtc() != null) {
+					sqlBuilder.append(" ctc=" + userUpdate.getCtc() + ",");
+				}
+				if (userUpdate.getMintarget() != null) {
+					sqlBuilder.append(" mintarget=" + userUpdate.getMintarget() + ",");
+				}
+				if (userUpdate.getMaxtarget() != null) {
+					sqlBuilder.append(" maxtarget=" + userUpdate.getMaxtarget() + ",");
+				}
+
+				if (userUpdate.getTargetduration() != null) {
+					sqlBuilder.append(" targetduration='" + userUpdate.getTargetduration() + "',");
+				}
+				sqlBuilder.setCharAt(sqlBuilder.length() - 1, ' ');
+				sqlBuilder.append(" WHERE id  = ?");
+				int updateResult = this.getEntityManager().createNativeQuery(sqlBuilder.toString()).setParameter(1, id)
+						.executeUpdate();
+				System.out.println("Update Result is " + updateResult);
+				if (updateResult > 0) {
+					Response res = new Response(ExceptionMessage.OK);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new Response(ExceptionMessage.OK);
+	}
+
+	@Override
+	public Response findAllUsers(RequestBody requestBody) {
+
+		Response response = new Response();
+		String sql = " SELECT u1.id, u1.name, CONCAT(u1.firstName,' ',u1.lastName) AS fullName, u1.contactNumber, u1.extension, u1.email, u1.role, u1.status, CONCAT(u2.firstName,' ',u2.lastName) AS reportsTo, u2.name AS reportingMail FROM `user` u1 "
+				+ " INNER JOIN `user` u2 ON u2.id = u1.reportingId_id ";
+		
+		if(null != requestBody.getSearchInput()) {
+			sql.concat(" WHERE CONCAT(u1.name,' ',CONCAT(u1.firstName,' ',u1.lastName),' ',u1.contactNumber,' ',u1.extension,' ',u1.email,' ',u1.role,' ',u1.status,' ',CONCAT(u2.firstName,' ',u2.lastName),' ',CONCAT(u2.firstName,' ',u2.lastName)) LIKE '%"  + requestBody.getSearchInput() + "%' " );
+		}
+
+		if (null != requestBody.getSortingField()) {
+			String sortingField = requestBody.getSortingField();
+			
+			if(sortingField.equalsIgnoreCase("name") || "name".contains(sortingField)) {
+				sortingField = "u1.name";
+			} else if(sortingField.equalsIgnoreCase("fullName") || "fullName".contains(sortingField)) {
+				sortingField = "CONCAT(u1.firstName,' ',u1.lastName)";
+			} else if(sortingField.equalsIgnoreCase("contactNumber") || "contactNumber".contains(sortingField)) {
+				sortingField = "u1.contactNumber";
+			} else if(sortingField.equalsIgnoreCase("extension") || "extension".contains(sortingField)) {
+				sortingField = "u1.extension";
+			} else if(sortingField.equalsIgnoreCase("email") || "email".contains(sortingField)) {
+				sortingField = "u1.email";
+			} else if(sortingField.equalsIgnoreCase("role") || "role".contains(sortingField)) {
+				sortingField = "u1.role";
+			} else if(sortingField.equalsIgnoreCase("status") || "status".contains(sortingField)) {
+				sortingField = "u1.status";
+			} else if(sortingField.equalsIgnoreCase("reportsTo") || "reportsTo".contains(sortingField)) {
+				sortingField = "CONCAT(u2.firstName,' ',u2.lastName)";
+			} else if(sortingField.equalsIgnoreCase("reportingMail") || "reportingMail".contains(sortingField)) {
+				sortingField = "u2.name";
+			} else {
+				sortingField = "u1.id";
+			}
+			
+			sql.concat( " ORDER BY "+sortingField+" ");
+			
+		}else {
+			sql.concat(" ORDER BY u1.id ");
+		}
+		
+		if(null != requestBody.getSortingOrder() && (requestBody.getSortingOrder().equalsIgnoreCase("ASC"))) {
+			sql.concat(" ASC ");
+		}else {
+			sql.concat(" DESC ");
+		}
+		
+		int startingRow = 0;
+		if((null != requestBody.getPageNo()) && (null != requestBody.getPageSize())) {
+			
+			if(requestBody.getPageNo() == 1) {
+				startingRow = 0;
+			}else {
+				startingRow = ((requestBody.getPageNo()-1) * requestBody.getPageSize());
+			}
+			
+			sql.concat(" LIMIT "+startingRow+","+requestBody.getPageSize());
+			
+			int totalRecords = findAll().size();
+			response.setTotalRecords(totalRecords);
+			if(totalRecords == 0 ) {
+				response.setTotalPages(0);
+			}
+			
+			if((totalRecords > 0) && (Integer.valueOf(totalRecords) <= requestBody.getPageSize())) {
+				response.setTotalPages(1);
+			}else {
+				Integer totalPages = Integer.valueOf(totalRecords) / requestBody.getPageSize();
+				totalPages = (totalPages == 0) ? totalPages : totalPages + 1;
+				response.setTotalPages(totalPages);
+			}
+			
+			if(totalRecords != 0) {
+				
+				List<UserTransfer> userList;
+				try {
+					Query selectQuery = this.getEntityManager().createNativeQuery(sql);
+					List<Object[]> results = selectQuery.getResultList();
+					userList = new ArrayList<UserTransfer>();
+					for (Object[] obj : results) {
+						User user = new User();
+						user.setId((Long)obj[0]);
+						user.setName((String)obj[1]);
+						user.setContactNumber((Long)obj[3]);
+						user.setExtension((Integer)obj[4]);
+						user.setEmail((String)obj[5]);
+						user.setRole((String)obj[6]);
+						user.setStatus((String)obj[7]);
+						UserTransfer transferObj = new UserTransfer();
+						transferObj.setFullName((String)obj[2]);
+						transferObj.setReportsTo((String)obj[8]);
+						transferObj.setReportingMail((String)obj[9]);
+						transferObj.setUser(user);
+						userList.add(transferObj);
+					}
+					
+					response.setStatus(ExceptionMessage.OK);
+					response.setResult(userList);
+				} catch (Exception e) {
+					e.printStackTrace();
+					response.setStatus(ExceptionMessage.Exception);
+					response.setErrorMessage("Unable to Retrieve users List Due to Follwing Exception : "+e.getMessage());
+					response.setErrorCode("500");
+				}
+				
+			}else {
+				response.setStatus(ExceptionMessage.DataIsEmpty);
+				response.setRes("No Users Found");
+			}
+			
+		}
+		
+		return response;
+		
+	}
+
+}

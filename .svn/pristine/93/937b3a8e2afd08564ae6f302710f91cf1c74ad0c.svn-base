@@ -1,0 +1,365 @@
+package com.ojas.rpo.security.rest.resources;
+
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.ObjectWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ojas.rpo.security.JsonViews;
+import com.ojas.rpo.security.dao.bdmreqdtls.BdmReqDao;
+import com.ojas.rpo.security.dao.user.UserDao;
+import com.ojas.rpo.security.entity.BdmReq;
+import com.ojas.rpo.security.entity.ExceptionMessage;
+import com.ojas.rpo.security.entity.Response;
+import com.ojas.rpo.security.entity.Role;
+import com.ojas.rpo.security.entity.User;
+import com.ojas.rpo.security.util.CandidateStatusCounts;
+import com.ojas.rpo.security.util.DateParsing;
+import com.ojas.rpo.security.util.EmailEntity;
+import com.ojas.rpo.security.util.GMailServer;
+import com.ojas.rpo.security.util.ReadPropertiesFile;
+
+@Component
+@Path("/Bdmrequire")
+public class BdmRequirement {
+	private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+	Date date = new Date();
+
+	@Autowired
+	private BdmReqDao bdmReqDao;
+
+	@Autowired
+	private UserDao userDao;
+
+	/*
+	 * @Autowired private User user;
+	 */
+
+	@Autowired
+	private ObjectMapper mapper;
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public @ResponseBody Response getdata() throws IOException {
+		this.logger.info("list()");
+		ObjectWriter viewWriter;
+		if (this.isAdmin()) {
+			viewWriter = this.mapper.writerWithView(JsonViews.Admin.class);
+		} else {
+			viewWriter = this.mapper.writerWithView(JsonViews.User.class);
+		}
+		List<BdmReq> bdmReq = this.bdmReqDao.findAll();
+		if (bdmReq == null) {
+
+			// throw new WebApplicationException(404);
+			return new Response(ExceptionMessage.DataIsEmpty);
+		} else
+
+		if (bdmReq.size() > 0) {
+
+			ListIterator litr = bdmReq.listIterator();
+			SimpleDateFormat formatter = new SimpleDateFormat("dd MMMM yyyy");
+
+			while (litr.hasNext()) {
+				BdmReq req = (BdmReq) litr.next();
+				req.setStartDate(
+						formatter.format(req.getRequirementStartdate() != null ? req.getRequirementStartdate() : date));
+				req.setEndDate(
+						formatter.format(req.getRequirementEndDate() != null ? req.getRequirementEndDate() : date));
+			}
+
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+		} else {
+
+			return new Response(ExceptionMessage.DataIsEmpty, "200", "NOEXCEPTION", "NULL");
+		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("{id}")
+	public @ResponseBody Response read(@PathParam("id") Long id) {
+		this.logger.info("read(id)");
+
+		BdmReq bdmReq = this.bdmReqDao.find(id);
+
+		if (bdmReq == null) {
+			return new Response(ExceptionMessage.ExcepcetdDataNotAvilable);
+		} else {
+			SimpleDateFormat formatter = new SimpleDateFormat("dd MMMM yyyy");
+			if (bdmReq.getRequirementStartdate() != null) {
+				bdmReq.setStartDate(formatter.format(bdmReq.getRequirementStartdate()));
+			}
+			if (bdmReq.getRequirementEndDate() != null) {
+				bdmReq.setEndDate(formatter.format(bdmReq.getRequirementEndDate()));
+			}
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/clientreq/{id}/{status}")
+	public @ResponseBody Response getdata(@PathParam("id") Long id, @PathParam("status") String status) {
+		this.logger.info("read(id)");
+		List<BdmReq> bdmReq = this.bdmReqDao.findreqByClientId(id, status);
+		if (bdmReq == null || bdmReq.isEmpty()) {
+			return new Response(ExceptionMessage.ExcepcetdDataNotAvilable);
+		} else {
+			if (bdmReq.size() > 0) {
+				ListIterator litr = bdmReq.listIterator();
+				SimpleDateFormat formatter = new SimpleDateFormat("dd MMMM yyyy");
+
+				while (litr.hasNext()) {
+					BdmReq req = (BdmReq) litr.next();
+					req.setStartDate(formatter
+							.format(req.getRequirementStartdate() != null ? req.getRequirementStartdate() : date));
+					req.setEndDate(
+							formatter.format(req.getRequirementEndDate() != null ? req.getRequirementEndDate() : date));
+				}
+			} else {
+				return new Response(ExceptionMessage.DataIsEmpty, "200", "NOEXCEPTION", "NULL");
+			}
+
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/clientreqbystatus/{status}")
+	public @ResponseBody Response clientReqByStatus(@PathParam("status") String status) {
+		this.logger.info("read(id)");
+		List<BdmReq> bdmReq = this.bdmReqDao.findreqByStatus(status);
+		if (bdmReq == null) {
+			return new Response(ExceptionMessage.ExcepcetdDataNotAvilable);
+		} else {
+			if (bdmReq.size() > 0) {
+				ListIterator litr = bdmReq.listIterator();
+				SimpleDateFormat formatter = new SimpleDateFormat("dd MMMM yyyy");
+
+				while (litr.hasNext()) {
+					BdmReq req = (BdmReq) litr.next();
+					req.setStartDate(formatter
+							.format(req.getRequirementStartdate() != null ? req.getRequirementStartdate() : date));
+					req.setEndDate(
+							formatter.format(req.getRequirementEndDate() != null ? req.getRequirementEndDate() : date));
+				}
+			} else {
+				return new Response(ExceptionMessage.DataIsEmpty, "200", "NOEXCEPTION", "NULL");
+			}
+
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+		}
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public @ResponseBody Response create(BdmReq bdmReq) {
+		System.out.println("==========inside post method====RPO");
+		this.logger.info("create(): " + bdmReq);
+
+		String s = bdmReq.getNameOfRequirement();
+		String fs = DateParsing.textConvertor(s);
+		bdmReq.setNameOfRequirement(fs);
+		if (this.bdmReqDao.save(bdmReq) == null) {
+			return new Response(ExceptionMessage.DataIsNotSaved);
+		} else {
+			List<User> user = this.userDao.findAll();
+			Iterator it = user.iterator();
+			while (it.hasNext()) {
+
+				User result = (User) it.next();
+				if (result.getRole().equals("BDM") || result.getRole().equals("AM")) {
+					EmailEntity emailEntity = ReadPropertiesFile.readConfig();// to read config file
+
+					emailEntity.setMessagesubject("New Requirement has been added...");// add subject
+					emailEntity.setTo(result.getName());// add to address
+
+					String mes = "<i>Hi All One New Requirement Has been Added</i><B>";
+					emailEntity.setMessageBody(mes);
+
+					GMailServer sender = new GMailServer(emailEntity);// create gmail server
+					// send mail
+					sender.sendMail(emailEntity);
+					System.out.println("Email Sent Succesfully...");
+				}
+			}
+
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("BdmReqBasedOnPrimaryContactId/{id}/{status}")
+	public @ResponseBody Response BdmReqBasedOnPrimaryContactId(@PathParam("id") Long id,
+			@PathParam("status") String status) {
+		this.logger.info("read(id)");
+
+		List<BdmReq> bdmReq = this.bdmReqDao.BdmReqBasedOnPrimryBDM(id, status);
+
+		if (bdmReq == null) {
+			return new Response(ExceptionMessage.ExcepcetdDataNotAvilable);
+		} else {
+
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+		}
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("{id}")
+	public @ResponseBody Response create(@PathParam("id") Long id, BdmReq bdmReq) {
+		System.out.println("==========inside post method====RPO");
+		bdmReq.setId(id);
+		this.logger.info("update(): " + bdmReq);
+
+		if (this.bdmReqDao.save(bdmReq) == null) {
+			return new Response(ExceptionMessage.DataIsNotSaved);
+		} else
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("BdmReqCountAndStatus")
+	public @ResponseBody Response BdmReqCountAndStatus() {
+		this.logger.info("read(id)");
+
+		List<CandidateStatusCounts> list = this.bdmReqDao.getBdmReqCountAndStatus();
+
+		if (list.isEmpty()) {
+			return new Response(ExceptionMessage.ExcepcetdDataNotAvilable);
+		} else {
+
+			return new Response(ExceptionMessage.StatusSuccess, list);
+		}
+	}
+
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("{id}")
+	public BdmReq delete(@PathParam("id") Long id) {
+
+		this.logger.info("delete(id)");
+		BdmReq bdmReq = this.bdmReqDao.find(id);
+		bdmReq.setStatus("inactive");
+
+		return this.bdmReqDao.save(bdmReq);
+
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Path("/getReqStatusListByCount")
+	public Map getReqStatusListByCount() {
+		Map<String, Integer> statusCounts = bdmReqDao.getReqStatusListByCount();
+
+		return statusCounts;
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("BdmReqByRole/{id}/{role}")
+	public @ResponseBody Response getBdmReqByRole(@PathParam("id") Long id, @PathParam("role") String role) {
+
+		this.logger.info("read(id)");
+
+		List<BdmReq> bdmReq = this.bdmReqDao.getBdmReqByRole(id, role);
+
+		if (bdmReq == null) {
+			return new Response(ExceptionMessage.ExcepcetdDataNotAvilable);
+		} else {
+			return new Response(ExceptionMessage.StatusSuccess, bdmReq);
+		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("getBdmReqByRole/{id}/{role}/{pageNo}/{pageSize}")
+	public @ResponseBody Response getBdmRequirementsByRole(@PathParam("id") Long id, @PathParam("role") String role,
+			@PathParam("pageNo") Integer pageNo, @PathParam("pageSize") Integer pageSize,
+			@QueryParam("sortingOrder") String sortingOrder, @QueryParam("sortingField") String sortingField) {
+
+		this.logger.info("read(id)");
+
+		if (null == role || role.isEmpty()) {
+			return new Response(ExceptionMessage.valueOf("value role 'role' not specified"));
+		}
+
+		if (null == id) {
+			return new Response(ExceptionMessage.valueOf("value of 'id' not specified"));
+		}
+		return this.bdmReqDao.getBdmReqirementsByRole(id, role, pageNo, pageSize, sortingOrder, sortingField);
+
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("searchRequirements/{role}/{id}/{searchInput}/{searchField}/{pageNo}/{pageSize}")
+	public Response searchRequirements(@PathParam("role") String role, @PathParam("id") Long id,
+			@PathParam("searchInput") String searchInput, @PathParam("searchField") String searchField,
+			@PathParam("pageNo") Integer pageNo, @PathParam("pageSize") Integer pageSize) {
+		if (null == role || role.isEmpty()) {
+			return new Response(ExceptionMessage.valueOf("value role 'role' not specified"));
+		}
+
+		if (null == id) {
+			return new Response(ExceptionMessage.valueOf("value of 'id' not specified"));
+		}
+
+		if (null == pageNo) {
+			return new Response(ExceptionMessage.valueOf("value of 'pageNo' not specified"));
+		}
+
+		if (null == pageSize) {
+			return new Response(ExceptionMessage.valueOf("value of 'pageSize' not specified"));
+		}
+		
+		if(null == searchField) {
+			return new Response(ExceptionMessage.valueOf("name of 'searchField' not specified"));
+		}
+		return this.bdmReqDao.searchRequirements(role, id, searchInput, searchField, pageNo, pageSize);
+	}
+
+	private boolean isAdmin() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		Object principal = authentication.getPrincipal();
+		if ((principal instanceof String) && ((String) principal).equals("anonymousUser")) {
+			return false;
+		}
+		UserDetails userDetails = (UserDetails) principal;
+
+		return userDetails.getAuthorities().contains(Role.ADMIN);
+	}
+}

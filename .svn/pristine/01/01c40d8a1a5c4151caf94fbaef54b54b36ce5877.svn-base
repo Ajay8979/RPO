@@ -1,0 +1,14 @@
+package com.ojas.rpo.security.dao.DashBoard;
+
+import java.util.List;
+
+import com.ojas.rpo.security.entity.Candidate;
+import com.ojas.rpo.security.entity.Submissions;
+
+public interface DashBoardInterface {
+	
+
+	public List getData1(Long requirementID);
+	public List getData(Long requriterID);
+
+}

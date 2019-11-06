@@ -1,0 +1,470 @@
+<div ng-include=" 'partials/fotter.html' "></div>
+<div ng-include=" 'partials/header.html' "></div>
+
+<script type='text/javascript'>
+	$(document).ready(function(event) {
+		$('#modeOf_Hiring').on('click', function() {
+			if ($(this).val() == 'Contract to Hire') {
+				$('#one').css('display', 'block');
+				$('#two').css('display', 'none');
+				$('#three').css('display', 'none');
+			} else if ($(this).val() == 'permanent') {
+				$('#two').css('display', 'block');
+				$('#one').css('display', 'none');
+				$('#three').css('display', 'none');
+			} else if ($(this).val() == 'contract') {
+				$('#three').css('display', 'block');
+				$('#one').css('display', 'none');
+				$('#two').css('display', 'none');
+			}
+		});
+
+		$('#slabcheck').on('click', function() {
+			if ($(this).is(":checked")) {
+				$('#percentage').attr('disabled', 'disabled');
+				$('#fixed').attr('disabled', 'disabled');
+				$('#two').attr('disabled', 'disabled');
+				$('#one').attr('disabled', 'disabled');
+				$('#slab').css('display', 'block');
+			} else {
+				$('#percentage').attr('disabled', false);
+				$('#fixed').attr('disabled', false);
+				$('#two').attr('disabled', false);
+				$('#one').attr('disabled', false);
+				$('#slab').css('display', 'none');
+			}
+		});
+		$('#slabType').on('click', function() {
+			if ($(this).val() == "percentage") {
+				$('#percentage').css('display', 'block');
+				$('#less').css('display', 'none');
+				$('#great').css('display', 'none');
+			} else if ($(this).val() == "less") {
+				$('#percentage').css('display', 'none');
+				$('#less').css('display', 'block');
+				$('#great').css('display', 'none');
+			} else {
+				$('#percentage').css('display', 'none');
+				$('#less').css('display', 'none');
+				$('#great').css('display', 'block');
+			}
+		});
+
+	});
+	
+</script>
+<div class="content-wrapper">
+	<div class="container-fluid" style="margin-top: 60px;">
+		<ol class="breadcrumb">
+			<div class="col-md-8">
+				<h3>Add Requirement</h3>
+			</div>
+		</ol>
+		<div class="row">
+			<div class="col-md-6">
+				<fieldset class="well .scheduler-border"
+					style="width: 395px; height: auto; margin: 5px auto; border: 1px solid #ccc; -webkit-box-shadow: 0px 0px 0px 0px #000; box-shadow: 0px 0px 0px 0px #000;">
+					<legend
+						style="width: auto; padding: 0 7px; border-bottom: none; font-family: Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif'; font-size: 18px; color: blueviolet"
+						align="left"> Requirement Details </legend>
+
+					<div class="row">
+
+						<div class="form-group col-md-12">
+							<form name="formone" novalidate>
+								<div class="row">
+									<div class="form-group col-md-12">
+										<label>Customer Name*</label> <select id="clientclick"
+											ng-model="clientName" class="form-control"
+											ng-options="items.id as items.clientName for items in clientnamesbdm"
+											id="client_name" ng-click="getActiveContacts(clientName)"
+											ng-init="getActiveContacts(clientName)"
+											style="width: 100%; height: 33.33px">
+
+										</select>
+
+										<div ng-messages="formone.client_name.$error"
+											ng-if="formone.client_name.$touched">
+											<div ng-message="required">* Required Customer Name</div>
+										</div>
+									</div>
+
+									<div class="form-group col-md-12">
+										<label for="contact_person">Customer SPOC *</label> <select
+											id="reqId" class="form-control" name="contactperson"
+											ng-model="addContact1"
+											ng-change="getRequirementContact(addContact1)" required>
+
+											<option ng-repeat="any in chiru" value={{any}}>
+												{{any.contact_Name}}</option>
+										</select>
+										<div ng-messages="formone.contactperson.$error"
+											ng-if="formone.contactperson.$touched">
+											<div ng-message="required">*required Contact Person</div>
+										</div>
+
+									</div>
+									<div class="form-group col-md-12">
+										<label for="requirement">Requirement Name*</label> <input
+											type="text" name="reqname" id="requirement"
+											class="form-control" ng-model="nameOfRequirement"
+											placeholder="Enter Requirement Name" required />
+										<div ng-messages="formone.reqname.$error"
+											ng-if="formone.reqname.$touched">
+											<div ng-message="required">This field is required</div>
+										</div>
+									</div>
+								<!-- 	<div class="form-group col-md-6">
+										<label>Requirement Open Date *</label>
+											<input type="text" value="{{requirementStartdate | date:'dd-MMMM-yyyy'}}" ng-model="startDate" class="form-control" placeholder="dd/MM/yy" />
+										<p class="input-group">
+											<input type="text" name="reqStartDate" placeholder="dd/MM/yyyy"
+												class="form-control" uib-datepicker-popup="{{format}}"
+												is-open="popup3.opened" datepicker-options="dateOptions"
+												alt-input-formats="altInputFormats" ng-model="startDate"
+												ng-change="checkErr(requirementEndDate)" required /> <span
+												class="input-group-btn">
+												<button type="button" class="btn btn-default"
+													ng-click="open3()">
+													<i class="glyphicon glyphicon-calendar"></i>
+												</button>
+											</span>
+										<div ng-messages="formone.reqStartDate.$error"
+											ng-if="formone.reqStartDate.$touched">
+											<div ng-message="required">*required start date</div>
+											<span style="color: #ff4c4c;">{{errMessage}}</span>
+										</div>
+										</p>
+
+									</div> -->
+										<div class="form-group col-md-6" >
+										<label>Requirement Open Date</label>
+										<p class="input-group">		
+											<input type="text" name="requirementStartdate" placeholder="dd/MM/yyyy" class="form-control"  uib-datepicker-popup="{{format}}"
+											is-open="popup1.opened" datepicker-options="dateOptions" alt-input-formats="altInputFormats" ng-model="requirementStartdate" ng-change="checkErr(requirementStartdate)" required/>
+											 <span class="input-group-btn">
+													<button type="button" class="btn btn-default" ng-click="open1()"><i class="glyphicon glyphicon-calendar"></i></button>
+												</span>	
+											<div ng-messages="formone.requirementStartdate.$error" ng-if="formone.requirementStartdate.$touched">
+												<!-- <div ng-message="required">*Required End date</div> -->
+												<span style="color:#ff4c4c;">{{errMessage}}</span>
+											</div>								
+										</p>
+									</div>
+									<!-- <div class="form-group col-md-6">
+										<label>Requirement End Date</label>
+										<p class="input-group">
+											<input type="text" name="reqEndDate" placeholder="dd/MM/yyyy"
+												class="form-control" uib-datepicker-popup="{{format}}"
+												is-open="popup1.opened" datepicker-options="dateOptions"
+												alt-input-formats="altInputFormats"
+												ng-model="endDate"
+												ng-change="checkErr(requirementEndDate)" required /> <span
+												class="input-group-btn">
+												<button type="button" class="btn btn-default"
+													ng-click="open1()">
+													<i class="glyphicon glyphicon-calendar"></i>
+												</button>
+											</span>
+										<div ng-messages="formone.reqEndDate.$error"
+											ng-if="formone.reqEndDate.$touched">
+											<div ng-message="required">*required End date</div>
+											<span style="color: #ff4c4c;">{{errMessage}}</span>
+										</div>
+										</p>
+									</div> -->
+									<div class="form-group col-md-6" >
+										<label>Requirement End Date</label>
+										<p class="input-group">		
+											<input type="text" name="requirementEndDate" placeholder="dd/MM/yyyy" class="form-control"  uib-datepicker-popup="{{format}}"
+											is-open="popup2.opened" datepicker-options="dateOptions" alt-input-formats="altInputFormats" ng-model="requirementEndDate" ng-change="checkErr(requirementEndDate)" required/>
+											 <span class="input-group-btn">
+													<button type="button" class="btn btn-default" ng-click="open2()"><i class="glyphicon glyphicon-calendar"></i></button>
+												</span>	
+											<div ng-messages="formone.requirementEndDate.$error" ng-if="formone.requirementEndDate.$touched">
+												<!-- <div ng-message="required">*Required End date</div> -->
+												<span style="color:#ff4c4c;">{{errMessage}}</span>
+											</div>								
+										</p>
+									</div>
+									<div class="form-group col-md-12">
+
+										<label for="relavent_experience">Skill Type</label> </br> <input
+											type="radio" id="generic" ng-model="requirementType"
+											value="Generic"> Generic</input> &nbsp;&nbsp; <input
+											type="radio" id="niche" ng-model="requirementType"
+											value="Niche" ng-checked="true"> Niche</input>
+									</div>
+									<div class="form-group col-md-6">
+										<label>Relevant Experience</label>(Yrs) <select
+											class="form-control" name="minexp"
+											ng-model="relavantExperience"
+											style="width: 100%; height: 33.33px" required>
+											<option value="" selected ng-disabled=true>-- Select
+												--</option>
+											<option value="0-3">0-3</option>
+											<option value="4-5">4-5</option>
+											<option value="6-10">6-10</option>
+											<option value="11-15">11-15</option>
+											<option value="16-20">16-20</option>
+											<option value="21-25">25-30</option>
+											<option value="30-40">30-40</option>
+										</select> <span style="color: #ff4c4c;">{{messege}}</span>
+									</div>
+
+
+
+									<div class="form-group col-md-6">
+										<label for="number of positions">Number of Positions*</label>
+										<input type="text" name="numberofpositions"
+											ng-model="numberOfPositions"
+											placeholder="Enter Number of Postions"
+											id="number of positions" class="form-control" numbers-only
+											required></input>
+										<div ng-messages="formtwo.numberofpositions.$error"
+											ng-if="formtwo.numberofpositions.$touched">
+											<div ng-message="required">This field is required</div>
+										</div>
+									</div>
+								</div>
+							</form>
+				</fieldset>
+			</div>
+			<div class="col-md-6">
+				<fieldset class="well .scheduler-border"
+					style="width: 395px; height: auto; margin: 5px auto; border: 1px solid #ccc; -webkit-box-shadow: 0px 0px 0px 0px #000; box-shadow: 0px 0px 0px 0px #000;">
+					<legend
+						style="width: auto; padding: 0 7px; border-bottom: none; font-family: Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif'; font-size: 18px; color: blueviolet"
+						align="left"> Additional Information </legend>
+
+
+					<div class="row">
+
+						<div class="form-group col-md-12">
+							<form name="formthree" novalidate>
+
+								<label for="client_name">Requirement Type*</label>
+								<!-- {{client}} -->
+								<select name="hiringtype" ng-model="typeOfHiring"
+									class="form-control" id="modeOf_Hiring"
+									ng-change="hiringdropfun()" name="hiringtypedropdown" required>
+									<option value="" selected ng-disabled=true>-- Select
+										--</option>
+									<option value="Contract to Hire">Contract to Hire</option>
+									<option value="permanent">Permanent</option>
+									<option value="contract">Contract</option>
+
+								</select>
+								<div ng-messages="formthree.hiringtypedropdown.$error"
+									ng-if="formthree.hiringtypedropdown.$touched">
+									<div ng-message="required">This field is required</div>
+								</div>
+
+
+							</form>
+						</div>
+
+						<div class="form-group col-md-12">
+							<form name="formthree" novalidate>
+								<div id="three" ng-show="typeOfHiring=='contract'">
+									<div class="row">
+										<div class="form-group col-md-4">
+											<label>Min Budget*</label> <input type="text"
+												placeholder="Enter Min Budget" class="form-control"
+												ng-model="minBudgetContract" />
+
+										</div>
+										<div class="form-group col-md-4">
+											<label>Max Budget*</label> <input type="text"
+												placeholder="Enter Max Budget" class="form-control"
+												ng-model="maxBudgetContract" />
+
+										</div>
+										<div class="form-group col-md-4">
+											<select name="hiringtype" ng-model="newType"
+												class="form-control" style="margin-top: 22px;"
+												id="modeOf_Hiring" name="hiringtypedropdown" required>
+												<option value="" selected ng-disabled=true>--
+													Select --</option>
+												<option value="permonth">Per Month</option>
+												<option value="perannum">Per Annum</option>
+
+
+											</select>
+
+										</div>
+									</div>
+								</div>
+						</div>
+
+
+						<div class="form-group col-md-12"
+							ng-show="typeOfHiring=='Contract to Hire'">
+							<div class="row" id="one">
+								<form name="F1" class="myForm" novalidate>
+									<div class="form-group col-md-6">
+										<label>Min Budget</label> <input type="text"
+											placeholder="Enter Min Budget" class="form-control"
+											ng-model="minBudget" />
+									</div>
+									<div class="form-group col-md-6">
+										<label>Max Budget</label> <input type="text"
+											placeholder="Enter Min Budget" class="form-control"
+											ng-model="maxBudget" />
+									</div>
+								</form>
+							</div>
+						</div>
+
+						<div class="form-group col-md-12">
+							<div id="two" ng-show="typeOfHiring=='permanent'">
+								<form name="f2" novalidate>
+									<input type="radio" ng-model="value" value="percentage"
+										ng-click="showFun1()" ng-checked="true">Percentage</input> <input type="radio"
+										ng-model="value" value="fixed" ng-click="showFun2()">Fixed</input>
+
+
+									<div ng-show="show1">
+										<div class="form-group col-md-6">
+											<label for="fixedrate"></label> <input type="text"
+												style="margin-left: -10px;" placeholder="Enter"
+												name="fixedamount" class="form-control" ng-model="famount"
+												valid-number></input>
+											<p style="color: red;">{{message}}</p>
+
+										</div>
+									</div>
+									<div ng-show="show2">
+										<div class="form-group col-md-6">
+											<label for="fixedrate"></label> <input type="text"
+												style="margin-left: -10px;" placeholder="Enter"
+												name="fixedamount" class="form-control" ng-model="famount"
+												valid-number></input>
+											<p style="color: red;">{{message}}</p>
+
+										</div>
+									</div>
+
+								</form>
+							</div>
+						</div>
+						<div class="form-group col-md-6">
+							<label for="status">Status*</label> <select id="status"
+								name="status" class="form-control" ng-model="status" required>
+								<option ng-repeat="i in statusList">{{i.status}}</option>
+							</select>
+							<div ng-messages="formone.noticeprd.$error"
+								ng-if="formone.noticeprd.$touched">
+								<div ng-message="required">This field is required</div>
+							</div>
+						</div>
+						
+						<div class="form-group col-md-6" >
+							<label for="jobLocation">Job Location</label> 
+						<!-- 	<select
+								id="clientName" name="client_name" class="form-control"
+								ng-model="locationId" multiple required>
+								<option value="" selected ng-disabled="true">Select</option>
+								<option ng-repeat="items in locationList" value={{items.id}}>{{items.locationName}}</option>
+							</select> -->
+							 <div ng-dropdown-multiselect8="" options="locationList" ng-model="locations"
+							selected-model="locationarray" extra-settings="example16settings"></div>
+						</div> 
+						
+						<div class="form-group col-md-12">
+							<label for="notice_period">Notice Period*</label>(days)
+						<!-- 	 <select
+								id="notice_period" class="form-control" name="noticeprd"
+								ng-model="noticePeriod" style="width: 100%; height: 33.33px"
+								required>
+								<option value="" selected ng-disabled=true>-- Select --</option>
+								<option value="0">0</option>
+								<option value="0-7">0-7</option>
+								<option value="0-14">0-14</option>
+								<option value="15-30">15-30</option>
+								<option value="30-60">30-60</option>
+								<option value="60-90">60-90</option>
+							</select> -->
+							<input type="textbox" class="form-control" id="notice_period" ng-model="noticePeriod" name="noticeprd"></input>
+							<div ng-messages="formone.noticeprd.$error"
+								ng-if="formone.noticeprd.$touched">
+								<div ng-message="required">This field is required</div>
+							</div>
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<label for="designation">Roles</label>
+						<div ng-dropdown-multiselect0="" options="desigbdm"
+							selected-model="desigarray" extra-settings="example16settings"></div>
+					</div>
+
+
+					<div class="form-group col-md-6">
+						<label for="skill">Skills</label>
+						<div ng-dropdown-multiselect1="" options="skillbdm"
+							selected-model="skillarray" extra-settings="example16settings"></div>
+					</div>		
+
+					<div class="form-group col-md-6">
+						<label for="qualification_required">Qualification</label>
+						<div ng-dropdown-multiselect2="" options="qualificbdm"
+							selected-model="qualiarray" extra-settings="example16settings"></div>
+
+					</div>
+
+
+					<div class="form-group col-md-6">
+						<label for="qualification_required">Certificates</label>
+						<div ng-dropdown-multiselect3="" options="certificatebdm"
+							selected-model="certiarray" extra-settings="example16settings"></div>
+
+					</div>
+					<div class="form-group col-md-12">
+						<label for="requirement_description">Job Description</label><br />
+						<textarea type="text" class="form-control"
+							ng-model="jobDescription" rows="3" cols="15"></textarea>
+					</div>
+
+					<div class="form-group col-md-12">
+						<label for="requirement_description">Requirement
+							Description*</label><br />
+						<textarea type="text" name="reqdesc" class="form-control"
+							ng-model="requirementDescription" rows="3" cols="15" required></textarea>
+						<div ng-messages="formone.reqdesc.$error"
+							ng-if="formone.reqdesc.$touched">
+							<div ng-message="required">This field is required</div>
+						</div>
+
+					</div>
+					<div class="form-group col-md-12">
+						<button class="btn btn-success pull-right" ng-click="bdmreqdtls()">Save</button>
+						<a href="#!/bdmlead" class="btn btn-danger pull-right"
+							style="margin-right: 10px;">Cancel</a>
+
+					</div>
+			</div>
+		</div>
+
+	</div>
+	</fieldset>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

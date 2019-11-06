@@ -1,0 +1,328 @@
+package com.ojas.rpo.security.dao.assign;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.PersistenceException;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ojas.rpo.security.dao.JpaDao;
+import com.ojas.rpo.security.entity.Assign;
+import com.ojas.rpo.security.entity.BdmReq;
+import com.ojas.rpo.security.entity.Client;
+import com.ojas.rpo.security.entity.ExceptionMessage;
+import com.ojas.rpo.security.entity.Response;
+import com.ojas.rpo.security.transfer.AssignmentsData;
+import com.ojas.rpo.security.transfer.RequirementListTranfer;
+
+public class JpaAssignDao extends JpaDao<Assign, Long> implements AssignDao {
+
+	public JpaAssignDao() {
+		super(Assign.class);
+
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Assign> findAll() {
+		final CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+		final CriteriaQuery<Assign> criteriaQuery = builder.createQuery(Assign.class);
+
+		Root<Assign> root = criteriaQuery.from(Assign.class);
+		criteriaQuery.orderBy(builder.desc(root.get("id")));
+
+		TypedQuery<Assign> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+		return typedQuery.getResultList();
+	}// findAll() closing
+
+	@Override
+	@Transactional(readOnly = true)
+	public Assign find(Long id) {
+		return this.getEntityManager().find(this.entityClass, id);
+	}
+
+	@Override
+	@Transactional
+	public Assign save(Assign entity) {
+		return this.getEntityManager().merge(entity);
+	}
+
+	/*
+	 * @Override public Assign asignTask(Assign Assign) { Assign at=
+	 * find(Assign.getUserIdentifier()); return at; }
+	 */
+
+	/*
+	 * public List<UserDetailsList> getSelecteduserList(String role){
+	 * List<UserDetailsList> selectedList=new ArrayList<UserDetailsList>();
+	 * List<UserDetailsList> userList=findAll();
+	 * 
+	 * for(UserDetailsList ul:userList){ if(role.equals(ul.getRole())){
+	 * selectedList.add(ul); } }
+	 * 
+	 * return selectedList; }//getSelecteduserList() closing
+	 */
+	public List<Assign> findById(Long assignid) {
+
+		CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+		CriteriaQuery<Assign> cq = cb.createQuery(Assign.class);
+		Root<Assign> e = cq.from(Assign.class);
+		Join<Assign, Assign> r = e.join("users", JoinType.LEFT);
+		Predicate p = cb.equal(r.get("id"), assignid);
+		cq.where(p);
+		TypedQuery<Assign> tq = getEntityManager().createQuery(cq);
+		return tq.getResultList();
+	}
+
+	@Override
+	public List<BdmReq> getReqByRecIdandClientId(Long userId, Long clientId, String status) {
+
+		Query q = getEntityManager().createQuery(" select ass.bdmReq from  Assign ass where ass.bdmReq.client.id="
+				+ clientId + " and  ass.users.id=" + userId + " " + " and  ass.bdmReq.status='" + status + "'");
+
+		List<BdmReq> results = q.getResultList();
+
+		return results;
+	}
+
+	@Override
+	public List<BdmReq> getReqByRecIdandUserId(Long userId, String status) {
+		Query q = getEntityManager().createQuery(" select ass.bdmReq from  Assign ass where  ass.users.id=" + userId
+				+ " " + " and  ass.bdmReq.status='" + status + "'");
+
+		List<BdmReq> results = q.getResultList();
+
+		return results;
+	}
+
+	@Override
+	public List<Client> getClientsByRecById(Long userId, String status) {
+
+		Query q = getEntityManager().createQuery(
+				" select ass.client.id,ass.client.clientName from  Assign ass where   ass.users.id=" + userId + " "
+						+ " and  ass.bdmReq.status='" + status + "' group by ass.client.id,ass.client.clientName");
+
+		List<Object[]> results = q.getResultList();
+		List<Client> list = new ArrayList();
+		for (Object obj[] : results) {
+			Client client = new Client();
+			client.setId(Long.parseLong(obj[0].toString()));
+			client.setClientName((obj[1].toString()));
+			list.add(client);
+		}
+		return list;
+	}
+
+	@Override
+	public List<Assign> getAssigenByBdmId(Long userId, String role) {
+		Query q = null;
+		if (role.equalsIgnoreCase("BDM")) {
+
+			q = getEntityManager().createQuery(
+					"from Assign req where req.client.primaryContact.id=? or req.client.secondaryContact.id=? order by id desc");
+			q.setParameter(1, userId);
+			q.setParameter(2, userId);
+		} else {
+			q = getEntityManager().createQuery(" from Assign req  order by req.id desc");
+		}
+		List<Assign> list = q.getResultList();
+
+		return list;
+	}
+
+	@Override
+	@Transactional
+	public int deleteByid(Long assigenid) {
+		return getEntityManager().createNativeQuery("delete from assign where id=" + assigenid).executeUpdate();
+
+	}
+
+	@Override
+	public Response getAssinedRequirementsByBdmId(Long userId, String role, Integer pageNo, Integer pageSize,
+			String sortingOrder, String sortingField) {
+		Response response = null;
+		String sortOrder = "DESC";
+		String sortField = "asn.id";
+		Integer totalRecords = 0;
+		if ((null != sortingOrder) && (sortingOrder.startsWith("asc") || sortingOrder.equalsIgnoreCase("asc"))) {
+			sortOrder = "ASC";
+		}
+
+		if (null != sortingField) {
+
+			if (sortingField.equalsIgnoreCase("clientName") || "clientName".contains(sortingField)) {
+				sortField = "c.clientName";
+			} else if (sortingField.equalsIgnoreCase("nameOfRequirement")
+					|| "nameOfRequirement".contains(sortingField)) {
+				sortField = "r.nameOfRequirement";
+			} else if (sortingField.equalsIgnoreCase("recruiterName") || "recruiterName".contains(sortingField)) {
+				sortField = "recruiterName";
+			} else if (sortingField.equalsIgnoreCase("date") || "AssignedDate".contains(sortingField)) {
+				sortField = "asn.date";
+			}
+
+		}
+
+		int startingRow = 0;
+		if (pageNo == 1) {
+			startingRow = 0;
+		} else {
+			startingRow = ((pageNo - 1) * pageSize);
+		}
+
+		try {
+			List<AssignmentsData> assignList = new ArrayList<AssignmentsData>();
+			Query q = null;
+			String sql = " SELECT c.clientName AS clientName, r.nameOfRequirement AS nameOfRequirement, u.firstName, u.lastName, asn.date AS assigndate FROM assign asn  INNER JOIN client c ON asn.client_id = c.id  INNER JOIN  bdmreq r ON asn.bdmReq_id=r.id  INNER JOIN user u ON asn.users_id=u.id ";
+            String countQuery = "select COUNT(*) FROM assign asn  INNER JOIN client c ON asn.client_id = c.id  INNER JOIN  bdmreq r ON asn.bdmReq_id=r.id  INNER JOIN user u ON asn.users_id=u.id ";
+			StringBuilder sqlBuilder = new StringBuilder(sql);
+			if (role.equalsIgnoreCase("BDM") || role.equalsIgnoreCase("bdmlead")) {
+
+				sqlBuilder = sqlBuilder.append(" WHERE (c.primaryContact_id=? OR c.secondaryContact_id=?) ORDER BY  "
+						+ sortField + " " + sortOrder + " LIMIT " + startingRow + "," + pageSize);
+
+				q = getEntityManager().createNativeQuery(sqlBuilder.toString());
+				q.setParameter(1, userId);
+				q.setParameter(2, userId);
+				
+				countQuery.concat(" WHERE (c.primaryContact_id=? OR c.secondaryContact_id=?) ");
+				
+			} else {
+				sql = sql.concat(
+						" ORDER BY " + sortingField + " " + sortingOrder + " LIMIT " + startingRow + ", " + pageSize);
+				q = getEntityManager().createNativeQuery(sql);
+				
+				countQuery.concat(" WHERE (c.primaryContact_id=? OR c.secondaryContact_id=?) ");
+			}
+
+			List<Object[]> results = q.getResultList();
+			if (results.isEmpty()) {
+				return new Response(ExceptionMessage.DataIsEmpty, "No Assignments Found");
+			} else {
+				for (Object[] objects : results) {
+					AssignmentsData data = new AssignmentsData();
+					data.setClientName((String) objects[0]);
+					data.setRequirementName((String) objects[1]);
+					data.setRecruiterName((String) objects[2]);
+					data.setAssignedDate((String) objects[3]);
+					assignList.add(data);
+				}
+				response = new Response(ExceptionMessage.OK, assignList);
+			}
+
+			
+			totalRecords = Integer.valueOf(this.getEntityManager().createNativeQuery(countQuery).getSingleResult().toString());
+			response.setTotalRecords(totalRecords);
+			if (totalRecords == 0) {
+				response.setTotalRecords(totalRecords);
+				response.setTotalPages(0);
+			}
+
+			if ((totalRecords > 0) && (Integer.valueOf(totalRecords) <= pageSize)) {
+				response.setTotalPages(1);
+			} else {
+				Integer totalPages = Integer.valueOf(totalRecords) / pageSize;
+				totalPages = (totalPages == 0) ? totalPages : totalPages + 1;
+				response.setTotalPages(totalPages);
+			}
+
+			return response;
+
+		} catch (PersistenceException pe) {
+			pe.printStackTrace();
+			return new Response(ExceptionMessage.Exception, "500",
+					"Unable to Retrieve Assigned Requirements.  " + " " + pe.getLocalizedMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new Response(ExceptionMessage.Exception, "500",
+					" Unable to Retrieve Assigned Requirements. " + e.getLocalizedMessage());
+		}
+
+	}
+
+	@Override
+	public Response searchAssignedRequirementsByBdmId(String role, Long id, String searchInput, String searchField,
+			Integer pageNo, Integer pageSize) {
+		Query q = null;
+		String sql = "SELECT c.clientName AS clientName, r.nameOfRequirement AS nameOfRequirement, CONCAT(u.firstname,' ',u.lastName) AS nameOfRecruiter, asnmt.date AS assinDate FROM `assign` asnmt "
+				+ "INNER JOIN `client` c ON asnmt.client_id = c.id  INNER JOIN  `bdmreq` r ON asnmt.bdmReq_id=r.id  INNER JOIN `user` u ON asnmt.users_id=u.id ";
+		StringBuilder sqlBuilder = new StringBuilder(sql);
+		List<AssignmentsData> assignList = new ArrayList<AssignmentsData>();
+
+		if (searchField.equalsIgnoreCase("clientName") || "clientName".contains(searchField)) {
+			searchField = "c.clientName";
+		}
+		if (searchField.equalsIgnoreCase("requirementName") || "requirementName".contains(searchField)) {
+			searchField = "r.nameOfRequirement";
+		}
+		if (searchField.equalsIgnoreCase("recruiterName") || "recruiterName".contains(searchField)) {
+			searchField = "CONCAT(u.firstname,' ',u.lastName)";
+		}
+		if (searchField.equalsIgnoreCase("assignedDate") || "assignedDate".contains(searchField)) {
+			searchField = "asnmt.date";
+		}
+
+		int startingRow = 0;
+		if (pageNo == 1) {
+			startingRow = 0;
+		} else {
+			startingRow = ((pageNo - 1) * pageSize);
+		}
+
+		try {
+			if (null != id) {
+				if (role.equalsIgnoreCase("BDM") || role.equalsIgnoreCase("bdmlead")) {
+					sqlBuilder.append(
+							" WHERE (c.primaryContact_id=? OR c.secondaryContact_id=?) AND " + searchField + " LIKE '%"
+									+ searchInput + "%' ORDER BY asnmt.id DESC LIMIT " + startingRow + "," + pageSize);
+					q = this.getEntityManager().createNativeQuery(sqlBuilder.toString());
+					q.setParameter(1, id);
+					q.setParameter(2, id);
+				} else {
+					sqlBuilder.append(" WHERE " + searchField + " LIKE '%" + searchInput
+							+ "%' ORDER BY asnmt.id DESC LIMIT " + startingRow + "," + pageSize);
+					q = this.getEntityManager().createNativeQuery(sqlBuilder.toString());
+					q.setParameter(1, id);
+				}
+			} else {
+				sqlBuilder.append(" AND " + searchField + " LIKE '%" + searchInput + "%' ORDER BY asnmt.id DESC LIMIT "
+						+ startingRow + "," + pageSize);
+				q = this.getEntityManager().createNativeQuery(sqlBuilder.toString());
+			}
+
+			List<Object[]> results = q.getResultList();
+			if (results.isEmpty()) {
+				return new Response(ExceptionMessage.DataIsEmpty, "No Assignments Found");
+			} else {
+				for (Object[] objects : results) {
+					AssignmentsData data = new AssignmentsData();
+					data.setClientName((String) objects[0]);
+					data.setRequirementName((String) objects[1]);
+					data.setRecruiterName((String) objects[2]);
+					data.setAssignedDate((String) objects[3].toString());
+					assignList.add(data);
+				}
+			}
+			return new Response(ExceptionMessage.OK, assignList);
+		} catch (PersistenceException pe) {
+			pe.printStackTrace();
+			return new Response(ExceptionMessage.Exception, "500",
+					"Unknown Column '" + searchField + "' .  Enter Correct Column Name. " + pe.getLocalizedMessage());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new Response(ExceptionMessage.Exception, "500",
+					" Unable to Search Assigned Requirements " + e.getLocalizedMessage());
+		}
+	}
+
+}

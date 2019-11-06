@@ -1,0 +1,369 @@
+package com.ojas.rpo.security.dao.candidate;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ojas.rpo.security.dao.JpaDao;
+import com.ojas.rpo.security.entity.BdmReq;
+import com.ojas.rpo.security.entity.Candidate;
+import com.ojas.rpo.security.entity.Employee;
+
+/**
+ * 
+ * @author Jyothi.Gurijala
+ *
+ */
+public class JpaCandidateDao extends JpaDao<Candidate, Long> implements CandidatelistDao {
+	public JpaCandidateDao() {
+		super(Candidate.class);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ojas.rpo.security.dao.JpaDao#findAll()
+	 */
+	@Override
+	@Transactional
+	public boolean updateCandiate(Long candiateId, String status) {
+		boolean result = false;
+		Query q = getEntityManager().createNativeQuery("update Candidate set candidateStatus=? where id =?");
+		q.setParameter(1, status);
+		q.setParameter(2, candiateId);
+		int i = q.executeUpdate();
+		if (i > 0) {
+			return true;
+		}
+		return result;
+	}
+
+	@Override
+	@Transactional
+	public boolean chekduplicate(String mobile, String email, String pancardNumber) {
+		// boolean result = false;
+
+		Query query = getEntityManager().createQuery(
+				"SELECT mobile,email,pancardNumber FROM Candidate  WHERE mobile=? OR email=? OR pancardNumber=?");
+
+		query.setParameter(1, mobile);
+		query.setParameter(2, email);
+		query.setParameter(3, pancardNumber);
+
+		@SuppressWarnings("unchecked")
+		List<Object[]> results = query.getResultList();
+
+		if (results.isEmpty()) {
+			return false;
+		} else {
+			return true;
+
+		}
+	}
+
+	public Candidate getCandidateId(String pancardNumber) {
+
+		Candidate cand = null;
+		final CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+		final CriteriaQuery<Candidate> criteriaQuery = builder.createQuery(this.entityClass);
+
+		Root<Candidate> root = criteriaQuery.from(this.entityClass);
+		Path<String> namePath = root.get("pancardNumber");
+		criteriaQuery.where(builder.equal(namePath, pancardNumber));
+
+		TypedQuery<Candidate> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+		List<Candidate> users = typedQuery.getResultList();
+
+		if (users.size() > 0) {
+			cand = (Candidate) users.get(0);
+		}
+		return cand;
+	}
+
+	public List<Candidate> getAllCandidatesByAddedPerson(Long id) {
+
+		List<Candidate> candidateDataList = new ArrayList<Candidate>();
+		Query mapCandidatesQuery = getEntityManager()
+				.createNativeQuery("SELECT candidate_id FROM testing.candidatemapping");
+		List<Object[]> mapCandidatesList = mapCandidatesQuery.getResultList();
+		ArrayList<Long> mappedCandidates = new ArrayList<Long>();
+		for (Object mapId : mapCandidatesList) {
+			mappedCandidates.add(Long.valueOf(mapId + ""));
+		}
+
+		Query query = getEntityManager().createNativeQuery(
+				"select can.firstName,can.lastName,can.email,can.mobile,can.skypeId,can.state,can.totalExperience,can.id,can.submittionDate from candidate can where can.user_id = ? order by id desc");
+		query.setParameter(1, id);
+		List<Object[]> candidatessList = query.getResultList();
+		for (Object[] can : candidatessList) {
+			Candidate candidate = new Candidate();
+
+			if (!mappedCandidates.contains(Long.valueOf(can[7] + ""))) {
+				candidate.setFirstName((String) can[0]);
+				candidate.setLastName((String) can[1]);
+				candidate.setEmail((String) can[2]);
+				candidate.setMobile((String) can[3]);
+				candidate.setSkypeID((String) can[4]);
+				candidate.setState((String) can[5]);
+				candidate.setTotalExperience((String) can[6]);
+				candidate.setId(Long.valueOf(can[7] + ""));
+				candidate.setSubmittionDate((Date) can[8]);
+				candidateDataList.add(candidate);
+			}
+
+		}
+
+		return candidateDataList;
+
+	}
+
+	@Override
+	public List<Candidate> getCandiateByRecurtierIdByStatus(Long recutierId, String status) {
+		// TODO Auto-generated method stub
+
+		CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+		CriteriaQuery<Candidate> cq = cb.createQuery(Candidate.class);
+		Root<Candidate> e = cq.from(Candidate.class);
+		Join<Candidate, Candidate> r = e.join("user", JoinType.LEFT);
+		Predicate predicates = cb.and(cb.equal(r.get("id"), recutierId), cb.equal(e.get("status"), status));
+
+		cq.where(predicates);
+		TypedQuery<Candidate> tq = getEntityManager().createQuery(cq);
+		List<Candidate> resultList = tq.getResultList();
+		return resultList;
+
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Candidate> findAll(String status) {
+		final CriteriaBuilder builder = getEntityManager().getCriteriaBuilder();
+		final CriteriaQuery<Candidate> criteriaQuery = builder.createQuery(Candidate.class);
+
+		Root<Candidate> root = criteriaQuery.from(Candidate.class);
+		Predicate p = builder.notEqual(root.get("candidateStatus"), "Created");
+		criteriaQuery.where(p);
+		criteriaQuery.orderBy(builder.desc(root.get("date")));
+
+		TypedQuery<Candidate> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+		return typedQuery.getResultList();
+	}
+
+	@Override
+	public List<Candidate> getCandiateByRequirementId(Long requiremnetId) {
+		// TODO Auto-generated method stub
+		Query query = null;
+		List<Candidate> requirementsList = null;
+
+		query = getEntityManager().createQuery(
+				"select req.candidate from CandidateMapping req where req.bdmReq.id = ? order by req.id desc");
+		query.setParameter(1, requiremnetId);
+		requirementsList = query.getResultList();
+
+		return requirementsList;
+
+	}
+
+	@Override
+	public List<BdmReq> getRequiremenByCandiateId(Long candidateId) {
+		// TODO Auto-generated method stub
+		Query query = null;
+		List<BdmReq> requirementsList = null;
+
+		query = getEntityManager().createQuery(
+				"select req.bdmReq from CandidateMapping req where req.candidate.id = ? order by req.id desc");
+		query.setParameter(1, candidateId);
+		requirementsList = query.getResultList();
+
+		return requirementsList;
+
+	}
+
+	@Override
+	public List<Candidate> getCandiateByRecurtierId(Long recutierId) {
+		// TODO Auto-generated method stub
+
+		CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+		CriteriaQuery<Candidate> cq = cb.createQuery(Candidate.class);
+		Root<Candidate> e = cq.from(Candidate.class);
+		Join<Candidate, Candidate> r = e.join("user", JoinType.LEFT);
+		Predicate p = cb.equal(r.get("id"), recutierId);
+		cq.where(p);
+		TypedQuery<Candidate> tq = getEntityManager().createQuery(cq);
+		return tq.getResultList();
+
+	}
+
+	@Override
+	public List<Candidate> getCandiateBySkillName(String skillName) {
+		// TODO Auto-generated method stub
+
+		Query query = getEntityManager()
+				.createNativeQuery("select *  from " + " candidate c , skill s , skillcandidate sc where s.skillName="
+						+ " ? and c.id = sc.candidate_ID " + " and c.id = sc.SKILL_ID ");
+		query.setParameter(1, skillName);
+		List<Object[]> results = query.getResultList();
+		return null;
+
+	}
+
+	@Override
+	public Map<String, Integer> getCandidateStatuCount(String status) {
+
+		Query q = getEntityManager().createNativeQuery("select candidateStatus ,count(*) from Candidate where status= '"
+				+ status + "' group by candidateStatus");
+
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		List<Object[]> results = q.getResultList();
+
+		for (Object obj[] : results) {
+
+			map.put(obj[0].toString(), new Integer(obj[1].toString()));
+
+		}
+
+		return map;
+	}
+
+	@Override
+	public Map<String, Integer> getCandidateStatusCountByRecruiter(String status) {
+
+		Query q = getEntityManager().createNativeQuery("SELECT \r\n" + "    candidateStatus, COUNT(*), us.name\r\n"
+				+ "FROM\r\n" + "    Candidate can , User us where can.user_id=us.id\r\n"
+				+ "GROUP BY candidateStatus ,us.name and can.status='" + status + "'");
+
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		List<Object[]> results = q.getResultList();
+
+		for (Object obj[] : results) {
+
+			map.put(obj[0].toString(), new Integer(obj[1].toString()));
+
+		}
+
+		return map;
+	}
+
+	@Override
+	public Map<String, Integer> getCandidateStatusCountByRecruiterId(Long id, String status) {
+
+		Query q = getEntityManager().createNativeQuery("SELECT " + "    candidateStatus, COUNT(*), us.name " + "FROM "
+				+ "    Candidate can , User us where can.user_id=" + id
+				+ " GROUP BY candidateStatus ,us.name and can.status='" + status + "'");
+
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		List<Object[]> results = q.getResultList();
+
+		for (Object obj[] : results) {
+
+			map.put(obj[0].toString(), new Integer(obj[1].toString()));
+
+		}
+
+		return map;
+	}
+
+	@Override
+	@Transactional
+	public int updatingStatus(Long id, String status, String offerStatus) {
+		int i = 0;
+		if (status != null) {
+			Query q = getEntityManager()
+					.createNativeQuery("update Candidate set candidateStatus=? , offereStatus =? where id =?");
+			q.setParameter(1, status);
+			q.setParameter(2, offerStatus);
+			q.setParameter(3, id);
+			i = q.executeUpdate();
+		} else {
+			Query q = getEntityManager().createNativeQuery("update Candidate set  offereStatus =? where id =?");
+			q.setParameter(1, offerStatus);
+			q.setParameter(2, id);
+			i = q.executeUpdate();
+		}
+
+		return i;
+	}
+
+	@Override
+	@Transactional
+	public int updatingOnBoardStatus(Long id, String status, String onBoardStatus, Date onboardeddate, String ctc) {
+		int i = 0;
+		if (status != null) {
+			Query q = getEntityManager().createNativeQuery(
+					"update Candidate set candidateStatus=? , onBoardedDate =? ,onBoardedStatus=? , offeredCtc=? where id =?");
+			q.setParameter(1, status);
+			q.setParameter(2, onboardeddate);
+			q.setParameter(3, onBoardStatus);
+			q.setParameter(4, ctc);
+			q.setParameter(5, id);
+			i = q.executeUpdate();
+		} else {
+			Query q = getEntityManager().createNativeQuery("update Candidate set  onBoardedStatus =? where id =?");
+			q.setParameter(1, onBoardStatus);
+			q.setParameter(2, id);
+			i = q.executeUpdate();
+		}
+		return i;
+	}
+@Override
+	public double getInsurance(Employee employee, Double age) {
+		double insuranceCoverage = 0.0;
+		double insuranceCover = 0.0;
+		Query q = null;
+
+		if (employee.getEmployeeType().equalsIgnoreCase("Spl")) {
+			insuranceCoverage = 100000.00;
+		} else if (employee.getTotalCtc() < 500000.00) {
+			insuranceCoverage = 300000.00;
+
+		} else if (employee.getTotalCtc() >= 500000.00 && employee.getTotalCtc() < 1000000.00) {
+			insuranceCoverage = 500000.00;
+
+		} else if (employee.getTotalCtc() >= 1000000.00) {
+			insuranceCoverage = 700000.00;
+		}
+		if (age < 35.00) {
+			String sql = "select 35Yrs from insurance where sum_insured='" + insuranceCoverage + "'";
+			q = getEntityManager().createNativeQuery(sql);
+		} else if (age > 35.00 && age < 45.00) {
+			String sql = "select 45Yrs from insurance where sum_insured='" + insuranceCoverage + "'";
+			q = getEntityManager().createNativeQuery(sql);
+		} else if (age > 45.00 && age < 55.00) {
+			String sql = "select 55Yrs from insurance where sum_insured='" + insuranceCoverage + "'";
+			q = getEntityManager().createNativeQuery(sql);
+		} else if (age > 55.00 && age < 65.00) {
+			String sql = "select 65Yrs from insurance where sum_insured='" + insuranceCoverage + "'";
+			q = getEntityManager().createNativeQuery(sql);
+		} else if (age > 65.00 && age < 70.00) {
+			String sql = "select 70Yrs from insurance where sum_insured='" + insuranceCoverage + "'";
+			q = getEntityManager().createNativeQuery(sql);
+		} else if (age > 70.00 && age < 75.00) {
+			String sql = "select 75Yrs from insurance where sum_insured='" + insuranceCoverage + "'";
+			q = getEntityManager().createNativeQuery(sql);
+		} else if (age > 75.00 && age < 80.00) {
+			String sql = "select 80Yrs from insurance where sum_insured='" + insuranceCoverage + "'";
+			q = getEntityManager().createNativeQuery(sql);
+		}
+		List<String> results = q.getResultList();
+		if (results != null && !results.isEmpty()) {
+			insuranceCover = Double.parseDouble(results.get(0));
+		}
+
+		return insuranceCover;
+	}
+
+}

@@ -1,0 +1,47 @@
+package com.ojas.rpo.security.dao.incentive;
+
+import java.util.List;
+
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ojas.rpo.security.dao.JpaDao;
+import com.ojas.rpo.security.entity.Incentive;
+import com.ojas.rpo.security.entity.UserDetailsList;
+
+public class JpaIncentiveDao extends JpaDao<Incentive,Long> implements IncentiveDao {
+
+	public JpaIncentiveDao() {
+		super(Incentive.class);
+		// TODO Auto-generated constructor stub
+	}
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.ojas.rpo.security.dao.JpaDao#findAll()
+	 */
+	@Override
+    @Transactional
+    public Incentive save(Incentive entity)
+    {
+        return this.getEntityManager().merge(entity);
+    } 
+
+	 @Override
+	    @Transactional(readOnly = true)
+	    public List<Incentive> findAll()
+	    {
+	        final CriteriaBuilder builder = this.getEntityManager().getCriteriaBuilder();
+	        final CriteriaQuery<Incentive> criteriaQuery = builder.createQuery(Incentive.class);
+
+	        Root<Incentive> root = criteriaQuery.from(Incentive.class);
+	        criteriaQuery.orderBy(builder.desc(root.get("date")));
+
+	        TypedQuery<Incentive> typedQuery = this.getEntityManager().createQuery(criteriaQuery);
+	        return typedQuery.getResultList();
+	    }
+}

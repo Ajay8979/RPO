@@ -1,0 +1,241 @@
+<style>
+.well{background: white;}
+.container-fluid{
+background:#f5f5f5
+}
+.breadcrumb{
+background:white
+}
+</style>
+<div ng-include="'partials/header.html'"></div>
+<div ng-include="'partials/fotter.html'"></div>
+<div class="content-wrapper">
+    <div class="container-fluid" style="margin-top: 60px;">
+    <ol class="breadcrumb">
+    <div class="col-md-8">
+    <h3>Customer Contact </h3>
+    </div>
+    </ol>
+    <div class="col-md-6">
+    <p ng-show="saveMsg">Contact Added Successfully</p>
+    <p ng-show="updateMsg">Updated Successfully</p>
+    <p ng-show='errorMsg'>Please Fill Mandatory Fields</p>
+   <form name="myForm"  novalidate>
+    <fieldset class="well .scheduler-border"
+			style="width: 790px; height: auto; margin: 0px auto; border: 1px solid #ccc; -webkit-box-shadow: 0px 0px 0px 0px #000; box-shadow: 0px 0px 0px 0px #000;">
+			<legend
+				style="width: auto; padding: 0 7px; border-bottom: none; font-family: Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif'; font-size: 18px; color: blueviolet"
+				align="left">Contact Details</legend>
+				<div class="col-md-12">
+				  <button class="btn btn-info pull-left" style="margin-top: -34px;" ng-show="saveBtncontact"  ng-click="addContactSave()">Save</button>
+				   <button class="btn btn-success pull-left" style="margin-top: -34px;"  ng-show="updatebtnContact"    ng-click="addContactUpdate()">Update</button>
+				    <a href="#!/viewClientContact" class="btn btn-info pull-right" style="margin-top: -34px;margin-left:450px;">Cancel</a>
+                 </div>   
+    <div class="row" style="margin-top:25px">
+		<div class="form-group col-lg-6">
+			<label >Customer Name</label>
+		 	<input type="text" name="clientname1" ng-model="clientName" class="form-control" readonly/>
+		 	<input type="hidden" ng-model="clientId"/>
+			<!-- <span style="color:red;" ng-show="myForm.contact_name.$touched && myForm.contact_name.$invalid">*The field is required.</span> -->
+		<!-- 
+		<select ng-model="clientId" class="form-control">
+<option ng-repeat="x in clientdata" value="{{x.id}}">{{x.clientName}}</option>
+</select>
+-->
+
+         <!-- <select name="users" ng-model="clientId" class="form-control">  -->
+<!-- <option value="">--Select Customer Type--</option> -->
+<!-- 	<option ng-repeat="x in clientdata" value="{{x.id}}">{{x.clientName}}</option>
+</select> -->
+		</div>
+		
+		
+		<div class="form-group col-lg-6">
+			<label>Contact Name<sup>*</sup></label>
+			<input type="text" placeholder="Contact Person Name" name="contact_name" ng-model="contact_Name" class="form-control" required></input>
+			<span style="color:red;" ng-show="myForm.contact_name.$touched && myForm.contact_name.$invalid">*The field is required.</span>
+		</div>
+		<div class="clearfix"></div>
+		
+		<div class="form-group col-lg-6">
+			<label for="email">Email Id<sup>*</sup></label>
+			<input type="email" placeholder="Enter Email id" name="email" ng-model="email" class="form-control" ng-pattern='/^[a-z]+[a-z0-9._]+@[a-z-]+\.[a-z.]{2,5}$/' required></input>
+			<span style="color:red;" ng-show="myForm.email.$touched && myForm.email.$invalid">*The field is required.</span>
+		</div>
+		<div class="form-group col-lg-6">
+			<label for="phone">Phone<sup>*</sup></label>
+			<input type="text" placeholder="Phone number" name="phone" ng-model="phone" ng-minlength="10" ng-maxlength="10" class="form-control" numbers-only required maxlength="10"></input>
+			<span style="color:red;" ng-show="myForm.phone.$touched && myForm.phone.$invalid">*The field is required.</span>
+			<span style="color:red;" ng-show="myForm.phone.$error.minlength">*Number is Short.</span>
+			<span style="color:red;" ng-show="myForm.phone.$error.maxlength" >*Number is long.</span>
+		</div>
+		<div class="clearfix"></div>
+	</div>
+	<div class="row">
+		
+		<!-- <div class="form-group col-lg-6">
+			<label for="mobile">Mobile No</label>
+			<input type="text" placeholder="Alternate mobile number" name="mobile" ng-minlength="10" ng-maxlength="10" ng-model="mobile" class="form-control" numbers-only maxlength="10"></input>
+			<span style="color:red;" ng-show="myForm.mobile.$error.minlength">*Number is Short.</span>
+			<span style="color:red;" ng-show="myForm.mobile.$error.maxlength" >*Number is long.</span>
+		</div> -->
+		<div class="form-group col-lg-12">
+			<label>Business Location<sup>*</sup></label>
+			<input type="text" placeholder="Enter Business Location" name="BusinessLocation" ng-model="BusinessLocation" class="form-control" required></input>
+			<span style="color:red;" ng-show="myForm.BusinessLocation.$touched && myForm.BusinessLocation.$invalid">*The field is required.</span>
+		</div>
+		<div class="clearfix"></div>
+		<div class="form-group col-lg-6">
+			<label>Birth Day Date</label>
+			<input type="text" placeholder="dd/MM" name="bday" ng-model="bday" class="form-control"></input>
+			<!-- <span style="color:red;" ng-show="myForm.bday.$touched && myForm.bday.$invalid">*The field is required.</span> -->
+		</div>
+		<div class="form-group col-lg-6">
+			<label>Anniversary Date</label>
+			<input type="text" placeholder="dd/MM" name="Aday" ng-model="Aday" class="form-control"></input>
+			<!-- <span style="color:red;" ng-show="myForm.Aday.$touched && myForm.Aday.$invalid">*The field is required.</span> -->
+		</div>
+		<div class="clearfix"></div>
+	</div>
+	
+	 
+		
+                       </fieldset>
+    </form>
+   
+    </div>
+    
+    <div class="col-md-6">
+     <form name="myForm"  novalidate  id="myForm">
+    <fieldset class="well .scheduler-border"
+			style="width: 790px; height: auto; margin: 0px auto; border: 1px solid #ccc; -webkit-box-shadow: 0px 0px 0px 0px #000; box-shadow: 0px 0px 0px 0px #000;">
+			<legend
+				style="width: auto; padding: 0 7px; border-bottom: none; font-family: Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif'; font-size: 18px; color: blueviolet"
+				align="left"> Address Details </legend>
+				
+
+<div class="col-md-12">
+    <button class="btn btn-info pull-left" style="margin-top: -34px;"  ng-show='svaeupdate'  ng-click="addAddress()">Save</button>
+   <button class="btn btn-success pull-right" style="margin-top: -34px;"  ng-show='updAddress1' ng-click="updateAddress()" >Update</button> 
+   
+   <button class="btn btn-info pull-left" style="margin-top: -34px;"  ng-show='routebtn1' ng-click="addAddress()">Save</button>
+   <button class="btn btn-success pull-right" style="margin-top: -34px;"  ng-show='routbtn2' ng-click="updateAddress()">Update</button> 
+   
+   
+     <a href="#!/viewClientContact" class="btn btn-info pull-right"  style="margin-top: -34px;margin-left:450px;">Cancel</a>
+		</div>			
+	<div class="row" style="margin-top:25px">
+	
+	<div class="form-group col-md-6">
+			<label for="contact_name">Address Type<sup>*</sup></label>
+			 
+		<!-- 	<select ng-model="addressId" id="addressId" class="form-control">
+      <option ng-repeat="x in addressType" value="{{x.id}}">{{x.typeOfAddress}}</option>
+             </select>
+             -->
+         <!--    <select  ng-change="fun(id)"
+      ng-model="id" 
+      ng-options="option.typeOfAddress for option in addressType" class="form-control">
+    </select>
+          -->
+          <select name="users" ng-model="id" class="form-control">
+<option value="">--Select Address Type--</option>
+<option ng-repeat="option in addressType" value="{{option.id}}">{{option.typeOfAddress}}</option>
+</select>
+			</div>
+			
+			</div>
+			<div class="form-group" id="displayblock">
+			<form name="myForm" novalidate>
+             <div class="row">
+             	<div class="form-group col-md-6">
+				<label for="contact_name">	Street 1<sup>*</sup>:</label>
+					<input type="text" ng-model="address2" class="form-control" placeholder="Enter City Name" ng-disabled="false"/>
+				</div>
+					<div class="form-group col-md-6">
+				<label for="contact_name">	Street 2 <sup>*</sup>:</label>
+					<input type="text" ng-model="address1" class="form-control" placeholder="Enter City Name" ng-disabled="false"/>
+				</div>
+				
+				<div class="clearfix"></div>
+				<div class="form-group col-md-6">
+					<label for="contact_name">Country <sup>*</sup>:</label>
+					<input type="text"  class="form-control" ng-model="clientCountry" placeholder="Enter Country Name" ng-disabled="false" />
+				</div>
+					<div class="form-group col-md-6">
+				<label for="contact_name">	State <sup>*</sup>:</label>
+					<input type="text"  class="form-control" ng-model="clientState"	placeholder="Enter State Name" ng-disabled="false"/>
+				</div>		
+					
+				<div class="clearfix"></div>		
+			</div>
+			
+				
+			 <div class="row">
+							
+				<div class="form-group col-md-6">
+	             <label for="contact_name">   Pincode<sup>*</sup>:</label>
+	                <input type="text"  class="form-control" required maxlength="6" placeholder="Enter Pincode" ng-pattern="/^[1-9][0-9]{5}$/" name="pincode" ng-model="pincode" numbers-only/>  
+	                 <br/>      
+	                <span style="color:red" ng-show="myForm.pincode.$dirty && myForm.pincode.$invalid" class="ng-hide">   
+	                   Pin code too long!  
+	                   </span>  
+                  </div>
+              
+	     </div>
+
+	<h3>Address Details</h3>
+  <ul class="list-group" style="overflow:hidden; overflow-y:scroll;height:150px;">
+    <li class="list-group-item"  ng-repeat="item in updatedList">
+    {{item.typeOfAddress.typeOfAddress}},{{item.addressLane1}},<br>
+    {{item.addressLane2}},{{item.state}},<br>
+    {{item.country}},{{item.city}}<br>
+    {{item.pincode}}<br>
+    <button class="btn btn-info pull-right" style="margin-top: -34px;"  ng-click=editAddress(updatedList,item,$index)>Edit</button> 
+	
+  
+    </li>
+  </ul>
+		</div>		 
+                       </fieldset>
+    </form>
+   
+    </div>
+    </div>
+    
+    </div>
+
+<div class="modal fade" id="response" role="dialog" >
+		<div class="modal-dialog" style="width:45%;height:auto;">   
+		<div class="modal-content">
+			
+        <div class="modal-header">
+		
+		<h4>Add Contact</h4>
+         </div>       
+      
+        <div class="modal-body">
+		<div class="container">
+		
+		<p style="color:green;">{{responseMes}}</p>
+	     
+	    </div>
+        </div>	
+        <div class="modal-footer">
+		<a ng-show="ok"  class="btn btn-info pull-right" data-dismiss="modal" ng-click="redirect()">OK</a>
+       
+        </div>
+		
+        </div>
+        </div>
+	    </div>
+
+
+
+
+
+
+
+
+
+    	

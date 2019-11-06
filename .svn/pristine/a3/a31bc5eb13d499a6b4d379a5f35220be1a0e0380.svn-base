@@ -1,0 +1,122 @@
+<div ng-include="'partials/header.html'"></div>
+<div ng-include="'partials/fotter.html'"></div>
+<div class="content-wrapper" ng-init="getBillingList();">
+    <div class="container-fluid" style="margin-top: 60px;">
+   	 	<ol class="breadcrumb">
+   	 	<div class="col-md-12 text-left">
+    		<h3>Incentives </h3>
+   	 		</div>
+		</ol>
+		<div class="col-md-12"> 
+      <div class="col-md-4 mb-4">
+      	<div class="row"> 
+      		<div class="col-sm-6">
+		      Search By Category
+		     <select class="form-control" ng-model="searchcategory" style="border-radius:0">
+		     <option value="" selected>--Select --</option>
+		     <option value="clientName">Candidate Name</option>
+		     <option value="customerType">Recruiter Name</option>
+		     <option value="primaryContact">Requirement Name</option>
+		     <option value="secondaryContact">Role</option>     
+		     </select>
+      		</div>
+      		<div class="col-sm-6">
+		       <input class="form-control"  type="search" ng-model="searchtext" placeholder="Search Here.." style="margin-top:21px;border-radius:0">
+		    <!--   <span class="glyphicon glyphicon-search" ng-click="searchclient(searchitem)" style="
+		position: absolute;font-size: 17px; color: #337ab7;right: 22px;top: 31px;z-index: 10;cursor: pointer;"></span> -->
+		    </div>
+      </div>  
+     </div>
+      <div class="col-md-4 mb-4">
+      	<div class="row"> 
+      		<div class="col-sm-4">
+		    Sort By
+		     <select class="form-control"  ng-model="order" style="border-radius:0">
+		     <option value="" selected>--Select --</option>
+		     <option value="clientName">Candidate Name</option>
+		     <option value="customerType">Recruiter Name</option>
+		     <option value="primaryContact">Requirement Name</option>
+		     <option value="secondaryContact">Role</option>
+		     <option value="secondaryContact">Date</option>         
+		     </select>
+     		 </div>
+      		<div class="col-sm-4">
+     <!--   <input class="form-control"  type="search" ng-model="searchitem.searchtext" placeholder="Search Here.." style="margin-top:21px;border-radius:0">
+      <span class="glyphicon glyphicon-search" ng-click="searchclient(searchitem)" style="
+position: absolute;font-size: 17px; color: #337ab7;right: 22px;top: 31px;z-index: 10;cursor: pointer;"></span> -->
+			 Order By
+		     <select class="form-control" ng-model="by"  style="border-radius:0">
+		     <option value="" selected>--Select --</option>
+		     <option value="asc">Ascending</option>
+		     <option value="desc">Descending</option>   
+		     </select>
+		      </div>
+		   	<div class="col-sm-2 mt-4 pt-2">
+		      <button class="btn btn-primary btn-sm" ng-click="searchText()">Search</button> 
+		      </div>
+		    <div class="col-sm-2  mt-4 pt-2">
+		      <button class="btn btn-danger btn-sm"  ng-click="clearText()">Reset</button> 
+		     </div>
+      	</div>   
+     </div>
+     <div class="col-md-4 mb-4 mt-4 pt-2">
+	     <div class="row"> 
+	      	<div class="col-sm-12 pr-0">
+     <!--  <p class="mt-5">Total Number of Records :
+      <strong class="text text-info">{{client1.length}}</strong><p>-->
+		        <select class="form-control pull-right" ng-model="pageSize" style="width:65px;margin-bottom: 6px;">
+		      <option>10</option>
+		      <option>15</option>
+		      <option>20</option>
+		      <option>25</option>
+		      </select>
+        		<span style="margin-right: 8px; margin-top: 6px;"class="pull-right text text-info">Items per page</span>
+      		</div>
+		      <!--  <div class="col-sm-4 pr-0"> 
+		       <a href="#!/client"  type="button"  class="btn btn-info btn-sm">Add Customer</a>{{totalCount}}
+		      </div> -->
+      </div>
+     </div>
+     </div>
+		<table st-table="ListReqData" st-safe-src="rowCollection" class="table">
+		<thead>
+	  <tr>
+		   <th class="text-left">Candidate Id</th>
+            <th class="text-left">Candidate Name </th>
+            <th class="text-left">Email</th>
+			<th class="text-left">Recruiter Id</th>
+			<th class="text-left">Recruiter Name</th>
+            <th class="text-left">Requirement Id </th>
+            <th class="text-left">Requirement Name</th>
+			<th class="text-left">Calculated Date</th>	
+			<th class="text-left">Credited Amount</th>
+			<th class="text-left">Debited Amount</th>
+			<th class="text-left">Role</th>				
+          </tr>		
+        </thead>
+        <tbody>
+       <tr dir-paginate="list in incentivesData |filter:test| itemsPerPage:pageSize">
+	     	<td class="text-left">{{list.canId}}</td>
+            <td class="text-left">{{list.candidateName}}</td>
+            <td class="text-left"> {{list.emailId}}</td>
+            <td class="text-left">{{list.recId}}</td>
+            <td class="text-left">{{list.recruiterName}}</td>
+            <td class="text-left"> {{list.reqId}}</td>
+            <td class="text-left">{{list.requirementName}}</td> 
+            <td class="text-left">{{list.date}}</td>
+            <td class="text-left">{{list.cr_Amount}}</td>
+            <td class="text-left">{{list.dr_Amount}}</td>
+            <td class="text-left">{{list.role}}</td>
+	  </tr>            
+        </tbody>
+      </table>
+      		<div class="col-md-12 text-center"><b>{{nodata}}</b></div> 
+      <div class="col-md-12 ">
+      <div class="float-right">
+		<!-- <ul uib-pagination total-items="totalCount" max-size="maxSize" items-per-page="pageSizeSelected" boundary-links="true" rotate="false" 
+		num-pages="numPages" direction-links="true" ng-model="pageIndex" ng-change="pageChanged()"></ul> -->
+		<dir-pagination-controls class="pull-right"></dir-pagination-controls>		
+      </div>
+      </div>
+	</div>
+</div>
